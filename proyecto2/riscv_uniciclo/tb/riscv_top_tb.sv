@@ -153,21 +153,24 @@ endtask
 // PROGRAMA LUI: verifica instrucción LUI
 // =========================================================
 task run_programa_lui;
+
+    // Cargar programa de prueba
     $readmemh("programas/prueba_lui.mem", dut.instr_mem.imem);
 
-    // Limpiar registros explícitamente
+    // Limpiar registros usados en la prueba
     dut.rf.regs[5] = 32'b0;
     dut.rf.regs[6] = 32'b0;
     dut.rf.regs[7] = 32'b0;
 
-    rst = 1; #40; rst = 0;   // más tiempo de reset
-    #200;                     // más ciclos para ejecutar
+    // Reset
+    rst = 1;
+    #40;
+    rst = 0;
+
+    // Ejecutar algunas instrucciones
+    #50;
 
     $display("=== Programa LUI ===");
-    $display("PC actual = 0x%h", dut.pc);           // debug
-    $display("x5 = 0x%h", dut.rf.regs[5]);          // debug
-    $display("result_src = %b", dut.ctrl.result_src); // debug
-    $display("imm_ext = 0x%h", dut.imm_ext);         // debug
 
     check("lui x5 = 0x12345000",  dut.rf.regs[5], 32'h12345000);
     check("lui x6 = 0xABCDE000",  dut.rf.regs[6], 32'hABCDE000);
