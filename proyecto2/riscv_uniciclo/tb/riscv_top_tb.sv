@@ -149,7 +149,31 @@ task run_programa2;
     check("jalr x8 = 1", dut.rf.regs[8], 32'd1);
 
 endtask
+// =========================================================
+// PROGRAMA LUI: verifica instrucción LUI
+// =========================================================
+task run_programa_lui;
+    $readmemh("programas/prueba_lui.mem", dut.instr_mem.imem);
 
+    // Limpiar registros explícitamente
+    dut.rf.regs[5] = 32'b0;
+    dut.rf.regs[6] = 32'b0;
+    dut.rf.regs[7] = 32'b0;
+
+    rst = 1; #40; rst = 0;   // más tiempo de reset
+    #200;                     // más ciclos para ejecutar
+
+    $display("=== Programa LUI ===");
+    $display("PC actual = 0x%h", dut.pc);           // debug
+    $display("x5 = 0x%h", dut.rf.regs[5]);          // debug
+    $display("result_src = %b", dut.ctrl.result_src); // debug
+    $display("imm_ext = 0x%h", dut.imm_ext);         // debug
+
+    check("lui x5 = 0x12345000",  dut.rf.regs[5], 32'h12345000);
+    check("lui x6 = 0xABCDE000",  dut.rf.regs[6], 32'hABCDE000);
+    check("addi x7 = 0x12345001", dut.rf.regs[7], 32'h12345001);
+
+endtask
     // =========================================================
     // MAIN
     // =========================================================
@@ -168,6 +192,13 @@ endtask
 
         run_programa2();
 
+
+        $display("");
+
+        run_programa_lui();   // ← agregar aquí
+
+        $display("");
+        $display("=========================================");
         $display("");
         $display("=========================================");
         $display("  Fin de simulación");

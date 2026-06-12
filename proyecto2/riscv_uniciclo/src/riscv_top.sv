@@ -1,4 +1,3 @@
-
 // Módulo top del procesador RISC-V uniciclo
 // Instancia y conecta todos los módulos del diseño
 module riscv_top (
@@ -62,6 +61,9 @@ module riscv_top (
     // PC + imm (destino de branch y jal)
     assign pc_target = pc + imm_ext;
 
+    // CAMBIO 1: src_a siempre es rd1, ya no hay caso especial para LUI
+    assign src_a = rd1;
+
     // =========================================================
     // INSTANCIAS
     // =========================================================
@@ -74,12 +76,12 @@ module riscv_top (
         .PC     (pc)
     );
 
-    
     // --- Instruction Memory ---
     imem instr_mem (
         .addr  (pc),
         .instr (instr)
     );
+
     // --- Control Unit ---
     control_unit ctrl (
         .op          (instr[6:0]),
@@ -126,10 +128,6 @@ module riscv_top (
         .out (src_b)
     );
 
-
-
-    assign src_a = (instr[6:0] == 7'b0110111) ? 32'b0 : rd1;  // Para instrucciones LUI, SrcA se fuerza a 0 (ya que no se usa el valor del registro fuente)
-
     // --- ALU ---
     alu alu_unit (
         .SrcA       (src_a),
@@ -167,22 +165,25 @@ module riscv_top (
     );
 
     // --- MUX Result (ResultSrc) ---
-    // 00 → ALUResult, 01 → load_data, 10 → PCPlus4
+    // 00 → ALUResult, 01 → load_data, 10 → PCPlus4, 11 → ImmExt (LUI)
     mux41 mux_result (
         .sel (result_src),
         .ina (alu_result),
         .inb (load_data),
         .inc (pc_plus4),
+        .ind (imm_ext),   // CAMBIO 2: conectar imm_ext como 4ta entrada
         .out (result)
     );
 
     // --- MUX PCNext (PCSrc) ---
     // 00 → PC+4, 01 → PCTarget (branch/jal), 10 → ALUResult (jalr)
+    // CAMBIO 3: este mux NO necesita ind, pc_src nunca vale 11
     mux41 mux_pcnext (
         .sel (pc_src),
         .ina (pc_plus4),
         .inb (pc_target),
         .inc (alu_result),
+        .ind (32'b0),     // no se usa, se amarra a 0
         .out (pc_next)
     );
 
