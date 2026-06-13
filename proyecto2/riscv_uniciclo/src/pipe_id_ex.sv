@@ -14,6 +14,8 @@ module pipe_id_ex (
     input  logic [3:0]  ALUControlD, //operación específica de la ALU
     input  logic [2:0]  LoadTypeD,   //tipo de load (lw, lh, lb, lhu, lbu)
     input  logic [1:0]  StoreTypeD,  //tipo de store (sw, sh, sb)
+    input  logic [2:0] funct3D,
+
 
     //datos que vienen de Decode
     input  logic [31:0] RD1D,      //valor leído del registro rs1
@@ -36,7 +38,7 @@ module pipe_id_ex (
     output logic [3:0]  ALUControlE,
     output logic [2:0]  LoadTypeE,
     output logic [1:0]  StoreTypeE,
-
+    output logic [2:0]  funct3E,
     //datos que van a Execute
     output logic [31:0] RD1E,
     output logic [31:0] RD2E,
@@ -69,6 +71,7 @@ module pipe_id_ex (
             Rs1E       <= 0;
             Rs2E       <= 0;
             RdE        <= 0;
+            funct3E <= 3'b000;
         end else begin
             //normal: capturar todas las señales de Decode
             RegWriteE  <= RegWriteD;
@@ -89,6 +92,7 @@ module pipe_id_ex (
             Rs1E       <= Rs1D;
             Rs2E       <= Rs2D;
             RdE        <= RdD;
+            funct3E <= funct3D;
         end
     end
 

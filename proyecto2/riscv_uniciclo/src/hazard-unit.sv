@@ -80,11 +80,9 @@ module hazard_unit (
     // Deteccion Load-Use Hazard 
 
     assign lwStall =
-        (((Rs1D == RdE) ||
-          (Rs2D == RdE))
-         &&
-         ResultSrcE0);
-
+    (((Rs1D == RdE) || (Rs2D == RdE)) &&
+     ResultSrcE0 &&
+     (RdE != 5'd0));
 
     // Señales Stall 
 
