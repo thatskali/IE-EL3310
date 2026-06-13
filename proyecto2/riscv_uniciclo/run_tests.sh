@@ -37,6 +37,7 @@ src/pipe_if_id.sv \
 src/pipe_id_ex.sv \
 src/pipe_ex_mem.sv \
 src/pipe_mem_wb.sv \
+src/branch_predictor.sv \
 src/hazard-unit.sv
 
 echo "Ejecutando $MEMFILE..."
