@@ -7,6 +7,17 @@ module riscv_pipeline (
     // FETCH
     // =========================
     logic [31:0] PCF, PCNextF, PCPlus4F, InstrF;
+    logic [31:0] ImmExtF;
+    logic [31:0] PCTargetF;
+    logic        IsBranchF;
+    logic        PredictTakenF;
+    logic        PredictedTakenD;
+    logic        PredictedTakenE;
+    logic [31:0] PredictedPCF;
+    logic [31:0] PredictedPCD;
+    logic [31:0] PredictedPCE;
+    logic        MispredictE;
+    logic [31:0] CorrectPCE;
 
     // =========================
     // DECODE
@@ -67,6 +78,30 @@ module riscv_pipeline (
     logic StallF, StallD, FlushD, FlushE;
     logic [1:0] ForwardAE, ForwardBE;
 
+
+    integer BranchCount = 0;
+    integer CorrectPredictions = 0;
+    integer WrongPredictions = 0;
+
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            BranchCount        <= 0;
+            CorrectPredictions <= 0;
+            WrongPredictions   <= 0;
+        end else begin
+            if (BranchE) begin
+                BranchCount <= BranchCount + 1;
+
+                if (PredictedTakenE == BranchTakenE)
+                    CorrectPredictions <= CorrectPredictions + 1;
+                else
+                    WrongPredictions <= WrongPredictions + 1;
+            end
+        end
+    end
+
+
+
     // =========================
     // FETCH STAGE
     // =========================
@@ -85,14 +120,51 @@ module riscv_pipeline (
         .instr (InstrF)
     );
 
+    
+    assign IsBranchF = (InstrF[6:0] == 7'b1100011);
+
+    // Inmediato B-type calculado en Fetch solo para predecir target
+    assign ImmExtF = {{20{InstrF[31]}},
+                    InstrF[7],
+                    InstrF[30:25],
+                    InstrF[11:8],
+                    1'b0};
+
+    assign PCTargetF = PCF + ImmExtF;
+
+    branch_predictor bp (
+        .clk           (clk),
+        .rst           (rst),
+
+        .PCF           (PCF),
+        .predict_takenF(PredictTakenF),
+
+        .updateE       (BranchE),
+        .PCE           (PCE),
+        .actual_takenE (BranchTakenE)
+    );
+
+    assign PredictedPCF = (IsBranchF && PredictTakenF) ? PCTargetF : PCPlus4F;
+
+
+    assign CorrectPCE = BranchTakenE ? PCTargetE : PCPlus4E;
+
+    // Falla si el predictor dijo algo distinto al resultado real del branch
+    assign MispredictE = BranchE && (PredictedTakenE != BranchTakenE);
+
     always_comb begin
-        case (PCSrcE)
-            2'b00: PCNextF = PCPlus4F;
-            2'b01: PCNextF = PCTargetE;
-            2'b10: PCNextF = PCJalrE;
-            default: PCNextF = PCPlus4F;
-        endcase
+        if (MispredictE) begin
+            PCNextF = CorrectPCE;
+        end else begin
+            case (PCSrcE)
+                2'b00: PCNextF = PredictedPCF;
+                2'b01: PCNextF = PCTargetE;  // jal
+                2'b10: PCNextF = PCJalrE;    // jalr
+                default: PCNextF = PredictedPCF;
+            endcase
+        end
     end
+
 
     // =========================
     // IF / ID REGISTER
@@ -107,6 +179,10 @@ module riscv_pipeline (
         .PCPlus4F (PCPlus4F),
         .PCD      (PCD),
         .InstrD   (InstrD),
+        .PredictedTakenF (IsBranchF && PredictTakenF),
+        .PredictedPCF    (PredictedPCF),
+        .PredictedTakenD (PredictedTakenD),
+        .PredictedPCD    (PredictedPCD),
         .PCPlus4D (PCPlus4D)
     );
 
@@ -206,6 +282,10 @@ module riscv_pipeline (
         .Rs1E        (Rs1E),
         .Rs2E        (Rs2E),
         .RdE         (RdE),
+        .PredictedTakenD (PredictedTakenD),
+        .PredictedPCD    (PredictedPCD),
+        .PredictedTakenE (PredictedTakenE),
+        .PredictedPCE    (PredictedPCE),
         .funct3E     (funct3E)
     );
 
@@ -381,7 +461,7 @@ module riscv_pipeline (
         .RdW         (RdW),
         .RegWriteW   (RegWriteW),
         .ResultSrcE0 (ResultSrcE[0]),
-        .PCSrcE      (PCSrcE != 2'b00),
+        .PCSrcE      (MispredictE || JumpE),
         .ForwardAE   (ForwardAE),
         .ForwardBE   (ForwardBE),
         .StallF      (StallF),

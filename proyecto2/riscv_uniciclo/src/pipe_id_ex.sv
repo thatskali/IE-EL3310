@@ -15,6 +15,8 @@ module pipe_id_ex (
     input  logic [2:0]  LoadTypeD,   //tipo de load (lw, lh, lb, lhu, lbu)
     input  logic [1:0]  StoreTypeD,  //tipo de store (sw, sh, sb)
     input  logic [2:0] funct3D,
+    input  logic        PredictedTakenD,
+    input  logic [31:0] PredictedPCD,
 
 
     //datos que vienen de Decode
@@ -39,6 +41,8 @@ module pipe_id_ex (
     output logic [2:0]  LoadTypeE,
     output logic [1:0]  StoreTypeE,
     output logic [2:0]  funct3E,
+    output logic        PredictedTakenE,
+    output logic [31:0] PredictedPCE,
     //datos que van a Execute
     output logic [31:0] RD1E,
     output logic [31:0] RD2E,
@@ -72,6 +76,8 @@ module pipe_id_ex (
             Rs2E       <= 0;
             RdE        <= 0;
             funct3E <= 3'b000;
+            PredictedTakenE <= 1'b0;
+            PredictedPCE    <= 32'b0;
         end else begin
             //normal: capturar todas las señales de Decode
             RegWriteE  <= RegWriteD;
@@ -93,6 +99,8 @@ module pipe_id_ex (
             Rs2E       <= Rs2D;
             RdE        <= RdD;
             funct3E <= funct3D;
+            PredictedTakenE <= PredictedTakenD;
+            PredictedPCE    <= PredictedPCD;
         end
     end
 

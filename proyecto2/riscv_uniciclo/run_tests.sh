@@ -27,6 +27,7 @@ src/main_deco.sv \
 src/alu_deco.sv \
 src/alu.sv \
 src/branch_unit.sv \
+src/branch_predictor.sv \
 src/extend.sv \
 src/data_mem.sv \
 src/load_unit.sv \
@@ -37,7 +38,6 @@ src/pipe_if_id.sv \
 src/pipe_id_ex.sv \
 src/pipe_ex_mem.sv \
 src/pipe_mem_wb.sv \
-src/branch_predictor.sv \
 src/hazard-unit.sv
 
 echo "Ejecutando $MEMFILE..."

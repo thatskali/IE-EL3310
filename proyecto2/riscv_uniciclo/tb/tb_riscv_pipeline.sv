@@ -69,6 +69,10 @@ module tb_riscv_pipeline;
 
             check(dut.rf.regs[8],  32'd1,        "x8");
             check(dut.rf.regs[10], 32'd0,        "x10");
+
+            check(dut.rf.regs[20], 32'd0,  "x20");
+            check(dut.rf.regs[21], 32'd1,  "x21");
+            check(dut.rf.regs[22], 32'd99, "x22");
         end
     endtask
 
@@ -95,7 +99,22 @@ module tb_riscv_pipeline;
         for (i = 0; i < 32; i = i + 1)
             $display("x%-2d = %h", i, dut.rf.regs[i]);
 
+       
+
+        $display("");
         $display("====================================");
+        $display(" BRANCH PREDICTOR STATS");
+        $display("====================================");
+
+        $display("Branches evaluados        = %0d",
+                dut.BranchCount);
+
+        $display("Predicciones tomadas   = %0d",
+                dut.CorrectPredictions);
+
+
+        $display("====================================");
+
 
         $display("");
         $display("====================================");
@@ -109,6 +128,8 @@ module tb_riscv_pipeline;
         else
             $display("ERROR: programa no reconocido: %s", memfile);
 
+
+
         $display("");
         $display("====================================");
         $display(" FIN DE SIMULACION");
@@ -117,20 +138,28 @@ module tb_riscv_pipeline;
         $finish;
     end
 
+
+
+
     always @(posedge clk) begin
-        if (!rst) begin
+        if (!rst && (dut.BranchE || dut.MispredictE)) begin
             $display(
-                "t=%0t | PCF=%h | InstrD=%h | PCSrcE=%b | StallF=%b StallD=%b | FlushD=%b FlushE=%b",
+                "t=%0t | PCF=%h | InstrD=%h | PredF=%b PredE=%b | BranchE=%b TakenE=%b | Mispredict=%b | PCSrcE=%b | FlushD=%b FlushE=%b",
                 $time,
                 dut.PCF,
                 dut.InstrD,
+                dut.PredictTakenF,
+                dut.PredictedTakenE,
+                dut.BranchE,
+                dut.BranchTakenE,
+                dut.MispredictE,
                 dut.PCSrcE,
-                dut.StallF,
-                dut.StallD,
                 dut.FlushD,
                 dut.FlushE
             );
         end
     end
+
+
 
 endmodule

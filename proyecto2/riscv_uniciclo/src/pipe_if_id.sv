@@ -8,11 +8,15 @@ module pipe_if_id (
     input  logic [31:0] PCF, //PC actual
     input  logic [31:0]  InstrF, //instrucción leída
     input  logic [31:0] PCPlus4F, //PC + 4
+    input  logic        PredictedTakenF,
+    input  logic [31:0] PredictedPCF,
 
     //salidas que van a Decode
     output logic [31:0] PCD,
     output logic [31:0] InstrD,
-    output logic [31:0] PCPlus4D
+    output logic [31:0] PCPlus4D,
+    output logic        PredictedTakenD,
+    output logic [31:0] PredictedPCD
 );
 
     always_ff @(posedge clk or posedge rst) begin
@@ -21,6 +25,8 @@ module pipe_if_id (
             PCD<= 0;
             InstrD<= 0;
             PCPlus4D<= 0;
+            PredictedTakenD <= 1'b0;
+            PredictedPCD    <= 32'b0;
         end else if (StallD) begin
             //stall: no hacer 
         end else begin
@@ -28,6 +34,8 @@ module pipe_if_id (
             PCD<= PCF;
             InstrD<= InstrF;
             PCPlus4D<=PCPlus4F;
+            PredictedTakenD <= PredictedTakenF;
+            PredictedPCD    <= PredictedPCF;
         end
     end
 
